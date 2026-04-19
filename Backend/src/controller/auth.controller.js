@@ -40,7 +40,10 @@ async function registerUserController(req, res) {
 
     res.cookie("token", token, {
       httpOnly: true,
-      sameSite: "Strict",
+      sameSite: "Lax",
+      secure: false,
+      path: "/",
+      maxAge: 24 * 60 * 60 * 1000
     });
 
     res.status(201).json({
@@ -63,7 +66,6 @@ async function registerUserController(req, res) {
 
 async function loginUserController(req, res) {
   try {
-    console.log("Login hit")
     const { email, password } = req.body;
 
     const user = await userModel.findOne({ email });
@@ -89,8 +91,11 @@ async function loginUserController(req, res) {
     );
 
     res.cookie("token", token, {
-      httpOnly: true,
-      sameSite: "Strict",
+       httpOnly: true,
+    sameSite: "Lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 24 * 60 * 60 * 1000
     });
 
     res.status(200).json({
@@ -113,8 +118,6 @@ async function logoutUserController(req, res) {
   try {
     const token = req.cookies?.token;
 
-    // console.log("Token:", token); 
-
     if (token) {
       await tokenBlacklistModel.create({token});
     }
@@ -125,7 +128,6 @@ async function logoutUserController(req, res) {
       message: "User logged out successfully",
     });
   } catch (error) {
-    console.error(error);
     res.status(500).json({
       message: "Logout failed",
       error: error.message,

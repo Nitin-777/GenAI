@@ -1,21 +1,11 @@
 const {GoogleGenAI} = require("@google/genai")
 const{ z }= require("zod")
-const {zodToJsonSchema} =require("zod-to-json-schema")
 
 
 const ai= new GoogleGenAI({
     apiKey: process.env.GOOGLE_GENAI_API_KEY
 
 })
-
-// async function invokeGeminiAi(){
-//    const response= await ai.models.generateContent({
-//     model:"gemini-2.5-flash",
-//     contents:"Hello gemini explain what is a interview?"
-//    })
-
-//    console.log(response.text)
-// }
      const interviewReportSchema= z.object({
         
         matchScore: z.number().describe("A score between 0 and 100 indication how well the candidate's profile matches the job describe"),
@@ -42,43 +32,88 @@ const ai= new GoogleGenAI({
              focus: z.string().describe("The main focus of this day in the preperation plan eg. data"),
              tasks:  z.array(z.string()).describe(" List of tasks to be done on this particular day ")
         })).describe("A day wise preparation plan for the candidate to follow"),
-         
+         title:z.string().describe("The title of the job for which the report is generated"),
      })
 
 
 async function generateInterviewReport({resume, selfDescription, jobDescription}){
-    const prompt=`You are an AI interview assistant.
+    try {
+        if (!resume || resume.trim().length === 0) {
+            throw new Error("Resume text is empty");
+        }
+        if (!jobDescription || jobDescription.trim().length === 0) {
+            throw new Error("Job description is empty");
+        }
+        if (!selfDescription || selfDescription.trim().length === 0) {
+            throw new Error("Self description is empty");
+        }
 
-Generate a detailed interview report in STRICT JSON format.
+        const prompt = `You are an expert career coach and interview preparation specialist. Analyze the following candidate's resume, self-description, and job description to generate a comprehensive interview preparation report.
 
-Follow the provided schema EXACTLY.
+CANDIDATE RESUME:
+${resume}
 
-Rules:
-- Do NOT return anything except JSON
-- Do NOT add explanations
-- Fill all fields
-- matchScore must be between 0–100
-- technicalQuestions must have at least 5 items
-- behavioralQuestions must have at least 4 items
-- skillGaps must have at least 3 items
-- preparationPlan must cover at least 7 days
+CANDIDATE SELF-DESCRIPTION:
+${selfDescription}
 
-                    Resume:${resume}
-                    self Description:${selfDescription}
-                    job Description: ${jobDescription}
+JOB DESCRIPTION:
+${jobDescription}
 
-     `
-         const response= await ai.models.generateContent({
-                 model:"gemini-3-flash-preview",
-                 contents:prompt,
-                 config:{
-                    responseMimeType:"application/json",
-                    responseSchema:zodToJsonSchema( interviewReportSchema)
-                 }
-         })
-
-        return (JSON.parse(response.text))
-     
+Generate a detailed interview preparation report in VALID JSON format (no markdown, no extra text). The JSON must contain exactly these fields:
+{
+  "matchScore": <number 0-100>,
+  "title": "<job title>",
+  "technicalQuestions": [
+    {
+      "question": "<question>",
+      "intention": "<why asked>",
+      "answer": "<how to answer>"
+    }
+  ],
+  "behavioralQuestions": [
+    {
+      "question": "<question>",
+      "intention": "<why asked>",
+      "answer": "<how to answer>"
+    }
+  ],
+  "skillGaps": [
+    {
+      "skill": "<skill name>",
+      "severity": "low|medium|high"
+    }
+  ],
+  "preparationPlan": [
+    {
+      "day": <number>,
+      "focus": "<focus area>",
+      "tasks": ["<task1>", "<task2>"]
+    }
+  ]
 }
+
+IMPORTANT: Return ONLY valid JSON. No markdown, no explanation, no extra text.`;
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash-lite",
+            contents: prompt,
+        });
+
+        const responseText = response.candidates[0].content.parts[0].text;
+        
+        // Extract JSON from the response (in case there's any formatting)
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            throw new Error("No valid JSON found in API response");
+        }
+        
+        const parsedResponse = JSON.parse(jsonMatch[0]);
+        return parsedResponse;
+    } catch (error) {
+        throw new Error(`AI Service failed: ${error.message}`);
+    }
+}
+
+
 
 module.exports=generateInterviewReport
