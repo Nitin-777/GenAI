@@ -41,7 +41,7 @@ async function registerUserController(req, res) {
     res.cookie("token", token, {
       httpOnly: true,
       sameSite: "Lax",
-      secure: false,
+      secure: process.env.NODE_ENV === "production",
       path: "/",
       maxAge: 24 * 60 * 60 * 1000
     });
