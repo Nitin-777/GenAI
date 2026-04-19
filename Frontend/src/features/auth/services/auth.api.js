@@ -2,20 +2,20 @@ import axios from "axios"
 
 
 const api=axios.create({
-    baseURL: 'http://localhost:3000',
+    baseURL: '/',
     withCredentials: true,
 })
 
 export async function register({username, email, password}){
     
     try{
-    const response= await api.post('/auth/register', {
+    const response= await api.post('/api/auth/register', {
         username,email,password
     })
     return response.data;
   } 
   catch(err){
-    console.log("Error", err)
+    return null
   }
 }
 
@@ -30,7 +30,7 @@ export async function login({email , password}){
 }
 
     catch(err){
-        console.log("Error cannot Login", err);
+        return null
     }
 }
 
@@ -41,17 +41,16 @@ export async function logout(){
          return response.data
     }
     catch(err){
-         console.log("Cannot logout", err);
+         return null
     }
 }
 
 export async function getMe(){
     try{
            const response=await api.get('/api/auth/get-me')
-
-           return response.data
+           return response.data;
     }
     catch(err){
-        console.log("Cannot fetch user data", err);
+        return null;
     }
 }

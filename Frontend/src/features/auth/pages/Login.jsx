@@ -30,7 +30,7 @@ const handleSubmit = async (e)=>{
                     <label htmlFor="email">Email</label>
                     <input 
                     onChange={(e) => {
-                        {setEmail(e.target.value)}
+                        setEmail(e.target.value)
                     }}
                     type="email" id="email" name= "email" placeholder="Enter email address"/>
                 </div>
@@ -38,7 +38,7 @@ const handleSubmit = async (e)=>{
                     <label htmlFor="password">Password</label>
                     <input
                     onChange={(e) => {
-                        {setPassword(e.target.value)}
+                        setPassword(e.target.value)
                     }}
                     type="password" id="password" name= "password" placeholder="Enter password"/>
                 </div>

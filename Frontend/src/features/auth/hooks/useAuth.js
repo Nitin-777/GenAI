@@ -1,9 +1,11 @@
 import { useContext, useEffect } from "react";
 import { login, register, logout, getMe } from "../services/auth.api";
 import { AuthContext } from "../auth.context";
+import { useNavigate } from "react-router";
 
 export const useAuth = () => {
     const context= useContext(AuthContext)
+    const navigate = useNavigate()
 
     const{user,setUser,loading,setLoading} = context
 
@@ -11,11 +13,14 @@ export const useAuth = () => {
         setLoading(true);
         try{
         const data= await login({email,password})
-        setUser(data.user)
+        if(data && data.user){
+            setUser(data.user)
+            return true
+        }
+        return false
         }
         catch(err){
-            console.log(err)
-
+            return false
         }
         finally{
         setLoading(false)
@@ -27,10 +32,13 @@ export const useAuth = () => {
         setLoading(true);
         try{
         const data= await register({username,email,password})
-        setUser(data.user)
+        if(data && data.user){
+            return true
+        }
+        return false
         }
         catch(err){
-            console.log(err)
+            return false
         }finally{
         setLoading(false);
         }
@@ -39,12 +47,20 @@ export const useAuth = () => {
     const handleLogout= async() => {
        setLoading(true)
        try{
-       const data = await logout()
-       setUser(null)
+           const response = await logout()
+           if(response && response.message){
+               setUser(null)
+               navigate('/login')
+               return true
+           } else {
+               return false
+           }
        } catch(err){
-                  console.log(err)
-       }finally{
-       setLoading(false)
+           setUser(null) // Clear user even if API fails
+           navigate('/login')
+           return false
+       } finally{
+           setLoading(false)
        }
     }
 
@@ -52,9 +68,12 @@ export const useAuth = () => {
     const getAndSetUser= async ()=> {
         try{
         const data= await getMe()
-        setUser(data.user)
+        if(data && data.user){
+            setUser(data.user)
         }
-        catch(err){} finally{
+        }
+        catch(err){
+        } finally{
         setLoading(false)
         }
     }
