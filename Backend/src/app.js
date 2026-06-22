@@ -6,7 +6,7 @@ const app= express();
 app.use(express.json()) 
 app.use(cookieParser());
 app.use(cors({
-  origin: "https://prepwizeai.netlify.app/login",
+  origin: "https://prepwizeai.netlify.app",
   credentials: true
 }));
 const authRouter= require('./routes/auth.routes')
